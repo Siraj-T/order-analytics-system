@@ -129,23 +129,44 @@
             <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($orders->total()) }}</span> orders
         </div>
 
-        <div class="pagination-links">
-            {{-- Previous Page Link --}}
-            @if ($orders->onFirstPage())
-                <span class="page-btn disabled">&larr; Previous</span>
-            @else
-                <a href="{{ $orders->previousPageUrl() }}" class="page-btn">&larr; Previous</a>
-            @endif
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="pagination-links">
+                {{-- First Page --}}
+                @if($orders->currentPage() > 2)
+                    <a href="{{ $orders->url(1) }}" class="page-btn" title="First Page">&laquo; 1</a>
+                @endif
 
-            {{-- Current Page Indicator --}}
-            <span class="page-btn active" style="cursor: default;">Page {{ number_format($orders->currentPage()) }} of {{ number_format($orders->lastPage()) }}</span>
+                {{-- Previous Page Link --}}
+                @if ($orders->onFirstPage())
+                    <span class="page-btn disabled">&larr; Previous</span>
+                @else
+                    <a href="{{ $orders->previousPageUrl() }}" class="page-btn">&larr; Previous</a>
+                @endif
 
-            {{-- Next Page Link --}}
-            @if ($orders->hasMorePages())
-                <a href="{{ $orders->nextPageUrl() }}" class="page-btn">Next &rarr;</a>
-            @else
-                <span class="page-btn disabled">Next &rarr;</span>
-            @endif
+                {{-- Current Page Indicator --}}
+                <span class="page-btn active" style="cursor: default;">Page {{ number_format($orders->currentPage()) }} of {{ number_format($orders->lastPage()) }}</span>
+
+                {{-- Next Page Link --}}
+                @if ($orders->hasMorePages())
+                    <a href="{{ $orders->nextPageUrl() }}" class="page-btn">Next &rarr;</a>
+                @else
+                    <span class="page-btn disabled">Next &rarr;</span>
+                @endif
+
+                {{-- Last Page --}}
+                @if($orders->currentPage() < $orders->lastPage() - 1)
+                    <a href="{{ $orders->url($orders->lastPage()) }}" class="page-btn" title="Last Page">{{ number_format($orders->lastPage()) }} &raquo;</a>
+                @endif
+            </div>
+
+            {{-- Instant Jump Form --}}
+            <form method="GET" action="{{ route('admin.orders') }}" style="display: flex; align-items: center; gap: 4px; margin-left: 8px;">
+                @foreach(request()->except('page') as $key => $val)
+                    <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                @endforeach
+                <input type="number" name="page" min="1" max="{{ $orders->lastPage() }}" placeholder="Jump" class="filter-input" style="width: 70px; padding: 5px 8px; font-size: 12px;">
+                <button type="submit" class="page-btn" style="padding: 5px 10px; font-size: 12px; cursor: pointer;">Go</button>
+            </form>
         </div>
     </div>
 </div>

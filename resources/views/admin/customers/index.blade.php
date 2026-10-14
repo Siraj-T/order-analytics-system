@@ -90,20 +90,38 @@
             <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($customers->total()) }}</span> customers
         </div>
 
-        <div class="pagination-links">
-            @if ($customers->onFirstPage())
-                <span class="page-btn disabled">&larr; Previous</span>
-            @else
-                <a href="{{ $customers->previousPageUrl() }}" class="page-btn">&larr; Previous</a>
-            @endif
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="pagination-links">
+                @if($customers->currentPage() > 2)
+                    <a href="{{ $customers->url(1) }}" class="page-btn" title="First Page">&laquo; 1</a>
+                @endif
 
-            <span class="page-btn active" style="cursor: default;">Page {{ number_format($customers->currentPage()) }} of {{ number_format($customers->lastPage()) }}</span>
+                @if ($customers->onFirstPage())
+                    <span class="page-btn disabled">&larr; Previous</span>
+                @else
+                    <a href="{{ $customers->previousPageUrl() }}" class="page-btn">&larr; Previous</a>
+                @endif
 
-            @if ($customers->hasMorePages())
-                <a href="{{ $customers->nextPageUrl() }}" class="page-btn">Next &rarr;</a>
-            @else
-                <span class="page-btn disabled">Next &rarr;</span>
-            @endif
+                <span class="page-btn active" style="cursor: default;">Page {{ number_format($customers->currentPage()) }} of {{ number_format($customers->lastPage()) }}</span>
+
+                @if ($customers->hasMorePages())
+                    <a href="{{ $customers->nextPageUrl() }}" class="page-btn">Next &rarr;</a>
+                @else
+                    <span class="page-btn disabled">Next &rarr;</span>
+                @endif
+
+                @if($customers->currentPage() < $customers->lastPage() - 1)
+                    <a href="{{ $customers->url($customers->lastPage()) }}" class="page-btn" title="Last Page">{{ number_format($customers->lastPage()) }} &raquo;</a>
+                @endif
+            </div>
+
+            <form method="GET" action="{{ route('admin.customers') }}" style="display: flex; align-items: center; gap: 4px; margin-left: 8px;">
+                @foreach(request()->except('page') as $key => $val)
+                    <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                @endforeach
+                <input type="number" name="page" min="1" max="{{ $customers->lastPage() }}" placeholder="Jump" class="filter-input" style="width: 70px; padding: 5px 8px; font-size: 12px;">
+                <button type="submit" class="page-btn" style="padding: 5px 10px; font-size: 12px; cursor: pointer;">Go</button>
+            </form>
         </div>
     </div>
 </div>

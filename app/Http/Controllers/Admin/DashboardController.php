@@ -15,37 +15,50 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        // Consolidated single-query metric extraction (O(1) index pass on 1M rows)
-        $metrics = Cache::remember('dashboard_kpi_metrics', 300, function () {
-            return DB::table('orders')->selectRaw("
-                COUNT(*) as total_orders,
-                COALESCE(SUM(total_amount), 0) as total_revenue,
-                COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) as completed_count,
-                COALESCE(SUM(CASE WHEN status = 'refunded' THEN 1 ELSE 0 END), 0) as refunded_count,
-                COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) as pending_count,
-                COALESCE(SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END), 0) as cancelled_count
-            ")->first();
-        });
+        $dbOffline = false;
+        try {
+            // Consolidated single-query metric extraction (O(1) index pass on 1M rows)
+            $metrics = Cache::remember('dashboard_kpi_metrics', 300, function () {
+                return DB::table('orders')->selectRaw("
+                    COUNT(*) as total_orders,
+                    COALESCE(SUM(total_amount), 0) as total_revenue,
+                    COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) as completed_count,
+                    COALESCE(SUM(CASE WHEN status = 'refunded' THEN 1 ELSE 0 END), 0) as refunded_count,
+                    COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) as pending_count,
+                    COALESCE(SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END), 0) as cancelled_count
+                ")->first();
+            });
 
-        $totalOrders = (int) ($metrics->total_orders ?? 0);
-        $totalRevenue = (float) ($metrics->total_revenue ?? 0);
-        $completedCount = (int) ($metrics->completed_count ?? 0);
-        $refundedCount = (int) ($metrics->refunded_count ?? 0);
-        $pendingCount = (int) ($metrics->pending_count ?? 0);
-        $cancelledCount = (int) ($metrics->cancelled_count ?? 0);
+            $totalOrders = (int) ($metrics->total_orders ?? 0);
+            $totalRevenue = (float) ($metrics->total_revenue ?? 0);
+            $completedCount = (int) ($metrics->completed_count ?? 0);
+            $refundedCount = (int) ($metrics->refunded_count ?? 0);
+            $pendingCount = (int) ($metrics->pending_count ?? 0);
+            $cancelledCount = (int) ($metrics->cancelled_count ?? 0);
 
-        // Fetch recent 10 orders with eager loaded customer
-        $recentOrders = Order::with(['customer:id,full_name,email,country'])
-            ->withCount('items')
-            ->orderBy('id', 'desc')
-            ->limit(10)
-            ->get();
+            // Fetch recent 10 orders with eager loaded customer
+            $recentOrders = Order::with(['customer:id,full_name,email,country'])
+                ->withCount('items')
+                ->orderBy('id', 'desc')
+                ->limit(10)
+                ->get();
 
-        // High-speed version fingerprint for live client sync (~1ms)
-        $version = Cache::remember('dashboard_version_fingerprint', 30, function () {
-            $latest = DB::table('orders')->selectRaw('COUNT(*) as total_count, MAX(id) as max_id')->first();
-            return ($latest->total_count ?? 0) . '_' . ($latest->max_id ?? 0);
-        });
+            // High-speed version fingerprint for live client sync (~1ms)
+            $version = Cache::remember('dashboard_version_fingerprint', 30, function () {
+                $latest = DB::table('orders')->selectRaw('COUNT(*) as total_count, MAX(id) as max_id')->first();
+                return ($latest->total_count ?? 0) . '_' . ($latest->max_id ?? 0);
+            });
+        } catch (\Throwable $e) {
+            $dbOffline = true;
+            $totalOrders = 0;
+            $totalRevenue = 0.0;
+            $completedCount = 0;
+            $refundedCount = 0;
+            $pendingCount = 0;
+            $cancelledCount = 0;
+            $recentOrders = collect([]);
+            $version = 'initial';
+        }
 
         return view('admin.dashboard', compact(
             'totalOrders',
@@ -55,7 +68,8 @@ class DashboardController extends Controller
             'pendingCount',
             'cancelledCount',
             'recentOrders',
-            'version'
+            'version',
+            'dbOffline'
         ));
     }
 
