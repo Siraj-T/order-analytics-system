@@ -80,10 +80,10 @@
             <header class="topbar">
                 <h2 class="page-title">@yield('page-title', 'Overview')</h2>
                 <div class="topbar-right">
-                    <div class="live-indicator">
-                        <div class="live-pulse"></div>
-                        <span>Live Sync Active</span>
-                    </div>
+                    <span style="font-size: 13px; font-weight: 600; color: var(--color-ink); background: var(--color-surface-pearl); padding: 6px 14px; border-radius: var(--radius-full); border: 1px solid var(--color-border); display: inline-flex; align-items: center; gap: 6px;">
+                        <span style="width: 7px; height: 7px; border-radius: 50%; background-color: var(--color-primary);"></span>
+                        1,000,000+ Records
+                    </span>
                 </div>
             </header>
 

@@ -19,7 +19,7 @@ class DashboardController extends Controller
         try {
             // Consolidated single-query metric extraction (O(1) index pass on 1M rows)
             $metrics = Cache::remember('dashboard_kpi_metrics', 300, function () {
-                return DB::table('orders')->selectRaw("
+                $raw = DB::table('orders')->selectRaw("
                     COUNT(*) as total_orders,
                     COALESCE(SUM(total_amount), 0) as total_revenue,
                     COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) as completed_count,
@@ -27,14 +27,23 @@ class DashboardController extends Controller
                     COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) as pending_count,
                     COALESCE(SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END), 0) as cancelled_count
                 ")->first();
+
+                return [
+                    'total_orders' => (int) ($raw->total_orders ?? 0),
+                    'total_revenue' => (float) ($raw->total_revenue ?? 0),
+                    'completed_count' => (int) ($raw->completed_count ?? 0),
+                    'refunded_count' => (int) ($raw->refunded_count ?? 0),
+                    'pending_count' => (int) ($raw->pending_count ?? 0),
+                    'cancelled_count' => (int) ($raw->cancelled_count ?? 0),
+                ];
             });
 
-            $totalOrders = (int) ($metrics->total_orders ?? 0);
-            $totalRevenue = (float) ($metrics->total_revenue ?? 0);
-            $completedCount = (int) ($metrics->completed_count ?? 0);
-            $refundedCount = (int) ($metrics->refunded_count ?? 0);
-            $pendingCount = (int) ($metrics->pending_count ?? 0);
-            $cancelledCount = (int) ($metrics->cancelled_count ?? 0);
+            $totalOrders = (int) data_get($metrics, 'total_orders', 0);
+            $totalRevenue = (float) data_get($metrics, 'total_revenue', 0);
+            $completedCount = (int) data_get($metrics, 'completed_count', 0);
+            $refundedCount = (int) data_get($metrics, 'refunded_count', 0);
+            $pendingCount = (int) data_get($metrics, 'pending_count', 0);
+            $cancelledCount = (int) data_get($metrics, 'cancelled_count', 0);
 
             // Fetch recent 10 orders with eager loaded customer
             $recentOrders = Order::with(['customer:id,full_name,email,country'])

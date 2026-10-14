@@ -82,44 +82,85 @@
         </tbody>
     </table>
 
-    <!-- Server-Side Pagination Bar (10 per page) -->
+    <!-- Server-Side Pagination Bar (Strict 10 items per page) -->
     <div class="pagination-container">
+        @php
+            $first = $customers->firstItem() ?? 0;
+            $last = $customers->lastItem() ?? 0;
+            $total = $customers->total();
+            $remaining = max(0, $total - $last);
+            $cp = $customers->currentPage();
+            $lp = $customers->lastPage();
+            $startRange = max(1, $cp - 2);
+            $endRange = min($lp, $cp + 2);
+        @endphp
+
         <div class="pagination-info">
-            Showing <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($customers->firstItem() ?? 0) }}</span> to 
-            <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($customers->lastItem() ?? 0) }}</span> of 
-            <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($customers->total()) }}</span> customers
+            Showing <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($first) }}</span> to 
+            <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($last) }}</span> of 
+            <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($total) }}</span> customers 
+            <span style="color: var(--color-hairline); margin: 0 6px;">|</span>
+            <span style="color: var(--color-ink-muted); font-weight: 500;">{{ number_format($remaining) }} remaining</span>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="pagination-links">
-                @if($customers->currentPage() > 2)
-                    <a href="{{ $customers->url(1) }}" class="page-btn" title="First Page">&laquo; 1</a>
-                @endif
-
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div class="pagination-links" style="display: flex; align-items: center; gap: 4px;">
+                {{-- Previous Arrow Link --}}
                 @if ($customers->onFirstPage())
-                    <span class="page-btn disabled">&larr; Previous</span>
+                    <span class="page-btn disabled" aria-disabled="true" title="First page reached">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 2px;"><polyline points="15 18 9 12 15 6"></polyline></svg> Previous
+                    </span>
                 @else
-                    <a href="{{ $customers->previousPageUrl() }}" class="page-btn">&larr; Previous</a>
+                    <a href="{{ $customers->previousPageUrl() }}" class="page-btn" rel="prev" title="Go to previous 10 customers">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 2px;"><polyline points="15 18 9 12 15 6"></polyline></svg> Previous
+                    </a>
                 @endif
 
-                <span class="page-btn active" style="cursor: default;">Page {{ number_format($customers->currentPage()) }} of {{ number_format($customers->lastPage()) }}</span>
+                {{-- Page 1 Pill (if window shifted) --}}
+                @if($startRange > 1)
+                    <a href="{{ $customers->url(1) }}" class="page-btn">1</a>
+                    @if($startRange > 2)
+                        <span class="page-btn" style="border: none; background: transparent; cursor: default; padding: 6px 4px; color: var(--color-ink-muted);">&hellip;</span>
+                    @endif
+                @endif
 
+                {{-- Active Window Page Pills --}}
+                @for($pageNumber = $startRange; $pageNumber <= $endRange; $pageNumber++)
+                    @if($pageNumber == $cp)
+                        <span class="page-btn active" style="cursor: default;">{{ number_format($pageNumber) }}</span>
+                    @else
+                        <a href="{{ $customers->url($pageNumber) }}" class="page-btn">{{ number_format($pageNumber) }}</a>
+                    @endif
+                @endfor
+
+                {{-- Last Page Pill (if window shifted) --}}
+                @if($endRange < $lp)
+                    @if($endRange < $lp - 1)
+                        <span class="page-btn" style="border: none; background: transparent; cursor: default; padding: 6px 4px; color: var(--color-ink-muted);">&hellip;</span>
+                    @endif
+                    <a href="{{ $customers->url($lp) }}" class="page-btn" title="Last Page">{{ number_format($lp) }}</a>
+                @endif
+
+                {{-- Next Arrow Link --}}
                 @if ($customers->hasMorePages())
-                    <a href="{{ $customers->nextPageUrl() }}" class="page-btn">Next &rarr;</a>
+                    <a href="{{ $customers->nextPageUrl() }}" class="page-btn" rel="next" title="Go to next 10 customers">
+                        Next <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-left: 2px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
                 @else
-                    <span class="page-btn disabled">Next &rarr;</span>
-                @endif
-
-                @if($customers->currentPage() < $customers->lastPage() - 1)
-                    <a href="{{ $customers->url($customers->lastPage()) }}" class="page-btn" title="Last Page">{{ number_format($customers->lastPage()) }} &raquo;</a>
+                    <span class="page-btn disabled" aria-disabled="true" title="Last page reached">
+                        Next <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-left: 2px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </span>
                 @endif
             </div>
 
+            {{-- Instant Jump Form --}}
             <form method="GET" action="{{ route('admin.customers') }}" style="display: flex; align-items: center; gap: 4px; margin-left: 8px;">
                 @foreach(request()->except('page') as $key => $val)
-                    <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                    @if(is_string($val))
+                        <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                    @endif
                 @endforeach
-                <input type="number" name="page" min="1" max="{{ $customers->lastPage() }}" placeholder="Jump" class="filter-input" style="width: 70px; padding: 5px 8px; font-size: 12px;">
+                <input type="number" name="page" min="1" max="{{ $customers->lastPage() }}" placeholder="Page" class="filter-input" style="width: 72px; padding: 5px 8px; font-size: 12px; text-align: center;">
                 <button type="submit" class="page-btn" style="padding: 5px 10px; font-size: 12px; cursor: pointer;">Go</button>
             </form>
         </div>

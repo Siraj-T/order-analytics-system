@@ -1,29 +1,17 @@
 @extends('layouts.admin')
 
 @section('title', 'Executive Dashboard | Order Analytics')
-@section('page-title', 'Executive Analytics Dashboard')
+@section('page-title', 'Executive Analytics Dashboard (1,000,000+ Records)')
 
 @section('content')
 <div data-live-sync data-version="{{ $version }}" data-live-url="{{ route('admin.dashboard.live') }}">
-    @if(!empty($dbOffline))
-        <div style="background: linear-gradient(135deg, rgba(0, 102, 204, 0.08) 0%, rgba(0, 113, 227, 0.04) 100%); border: 1px solid rgba(0, 102, 204, 0.25); border-radius: var(--radius-lg); padding: 22px 28px; margin-bottom: 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px;">
-            <div>
-                <h3 style="color: var(--color-primary); font-size: 17px; font-weight: 600; margin-bottom: 6px;">Database Setup Required</h3>
-                <p style="color: var(--color-ink); font-size: 14px; margin-bottom: 0;">Start MySQL service (<code>net start MySQL80</code>) and stream-import the 4,025,000 records:</p>
-            </div>
-            <code style="background: #fff; padding: 10px 18px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; border: 1px solid var(--color-border); color: var(--color-primary); white-space: nowrap; box-shadow: var(--shadow-subtle);">
-                php artisan app:import-dump
-            </code>
-        </div>
-    @endif
-
     <!-- KPI Metric Cards Grid -->
     <div class="metrics-grid">
         <div class="metric-card">
             <span class="metric-label">Total Gross Revenue</span>
             <div id="metric-total_revenue" class="metric-value">${{ number_format($totalRevenue, 2) }}</div>
             <div class="metric-badge" style="color: #248a3d;">
-                <span>Across {{ number_format($totalOrders) }} Orders</span>
+                <span>Across {{ number_format($totalOrders) }} Orders (1M+ Live Dataset)</span>
             </div>
         </div>
 

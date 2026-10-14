@@ -474,30 +474,46 @@ body {
 }
 
 .page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     padding: 6px 12px;
     font-size: 13px;
     font-weight: 500;
+    line-height: 1.4;
     border-radius: var(--radius-sm);
     border: 1px solid var(--color-border);
     background: #fff;
     color: var(--color-ink);
     text-decoration: none;
     transition: var(--spring-snappy);
+    user-select: none;
+    white-space: nowrap;
+}
+
+.page-btn svg {
+    flex-shrink: 0;
 }
 
 .page-btn:hover {
     border-color: var(--color-primary);
     color: var(--color-primary);
+    background: rgba(0, 113, 227, 0.04);
 }
 
 .page-btn.active {
     background: var(--color-primary);
     border-color: var(--color-primary);
     color: #fff;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0, 113, 227, 0.25);
 }
 
 .page-btn.disabled {
-    opacity: 0.4;
+    opacity: 0.35;
+    background: #f5f5f7;
+    border-color: var(--color-hairline);
     cursor: not-allowed;
     pointer-events: none;
 }

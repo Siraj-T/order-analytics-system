@@ -17,10 +17,10 @@
     <div class="metric-card">
         <span class="metric-label">Top Selling Product</span>
         <div class="metric-value" style="font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            {{ $products->first()->product_name ?? 'N/A' }}
+            {{ data_get($products, '0.product_name', 'N/A') }}
         </div>
         <div class="metric-badge" style="color: #248a3d;">
-            <span>${{ number_format($products->first()->total_gross_revenue ?? 0, 2) }} Gross Revenue</span>
+            <span>${{ number_format((float) data_get($products, '0.total_gross_revenue', 0), 2) }} Gross Revenue</span>
         </div>
     </div>
 
@@ -40,7 +40,7 @@
             <h3 style="font-size: 16px; font-weight: 600;">Top 25 Products by Revenue</h3>
             <p style="font-size: 13px; color: var(--color-ink-muted);">Aggregated and cached using composite index <code>idx_items_product_metrics</code></p>
         </div>
-        <span style="font-size: 12px; color: var(--color-ink-muted);">Updated Hourly</span>
+        <span style="font-size: 12px; color: var(--color-ink-muted);">Updated Daily</span>
     </div>
 
     <table class="data-table">
@@ -57,31 +57,39 @@
         </thead>
         <tbody>
             @php 
-                $maxRevenue = $products->max('total_gross_revenue') ?: 1;
+                $maxRevenue = !empty($products) ? max(array_column($products, 'total_gross_revenue') ?: [1]) : 1;
             @endphp
             @forelse($products as $idx => $prod)
+                @php
+                    $prodName = data_get($prod, 'product_name');
+                    $unitsSold = data_get($prod, 'total_units_sold', 0);
+                    $grossRev = (float) data_get($prod, 'total_gross_revenue', 0);
+                    $avgPrice = (float) data_get($prod, 'average_price', 0);
+                    $occurrences = data_get($prod, 'order_occurrences', 0);
+                    $sharePercent = $maxRevenue > 0 ? round(($grossRev / $maxRevenue) * 100) : 0;
+                @endphp
                 <tr>
                     <td style="font-weight: 700; color: var(--color-ink-muted);">#{{ $idx + 1 }}</td>
-                    <td style="font-weight: 600; font-size: 15px;">{{ $prod->product_name }}</td>
-                    <td style="font-weight: 600;">{{ number_format($prod->total_units_sold) }}</td>
+                    <td style="font-weight: 600; font-size: 15px;">{{ $prodName }}</td>
+                    <td style="font-weight: 600;">{{ number_format($unitsSold) }}</td>
                     <td style="font-weight: 700; font-size: 15px; color: #248a3d;">
-                        ${{ number_format($prod->total_gross_revenue, 2) }}
+                        ${{ number_format($grossRev, 2) }}
                     </td>
                     <td style="color: var(--color-ink-muted);">
-                        ${{ number_format($prod->average_price, 2) }}
+                        ${{ number_format($avgPrice, 2) }}
                     </td>
                     <td>
                         <span style="padding: 2px 8px; border-radius: var(--radius-full); background: rgba(0,0,0,0.05); font-size: 12px; font-weight: 600;">
-                            {{ number_format($prod->order_occurrences) }} orders
+                            {{ number_format($occurrences) }} orders
                         </span>
                     </td>
                     <td>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <div style="flex: 1; height: 6px; background: rgba(0,0,0,0.06); border-radius: 999px; overflow: hidden;">
-                                <div style="height: 100%; width: {{ round(($prod->total_gross_revenue / $maxRevenue) * 100) }}%; background: var(--color-primary); border-radius: 999px;"></div>
+                                <div style="height: 100%; width: {{ $sharePercent }}%; background: var(--color-primary); border-radius: 999px;"></div>
                             </div>
                             <span style="font-size: 11px; color: var(--color-ink-muted); font-weight: 600; min-width: 30px;">
-                                {{ round(($prod->total_gross_revenue / $maxRevenue) * 100) }}%
+                                {{ $sharePercent }}%
                             </span>
                         </div>
                     </td>
@@ -89,7 +97,7 @@
             @empty
                 <tr>
                     <td colspan="7" style="text-align: center; padding: 48px; color: var(--color-ink-muted);">
-                        No product data currently loaded. Run <code>php artisan app:import-dump</code> to populate records.
+                        No product data currently loaded.
                     </td>
                 </tr>
             @endforelse

@@ -13,28 +13,32 @@ class ProductController extends Controller
      */
     public function index()
     {
-        // Aggregates across 3,000,000 rows cached for 1 hour
-        $products = Cache::remember('products_leaderboard_stats', 3600, function () {
+        // High-performance aggregate without slow COUNT(DISTINCT)
+        // Stored as pure array to avoid PHP 8.5 stdClass serialization issues
+        $products = Cache::remember('products_leaderboard_stats', 86400, function () {
             return DB::table('order_items')
                 ->selectRaw('
                     product_name,
                     SUM(quantity) as total_units_sold,
                     SUM(quantity * unit_price) as total_gross_revenue,
                     AVG(unit_price) as average_price,
-                    COUNT(DISTINCT order_id) as order_occurrences
+                    COUNT(*) as order_occurrences
                 ')
                 ->groupBy('product_name')
                 ->orderByDesc('total_gross_revenue')
                 ->limit(25)
-                ->get();
+                ->get()
+                ->map(fn ($item) => (array) $item)
+                ->all();
         });
 
-        $totalCatalogUnits = Cache::remember('products_total_units_sold', 3600, function () {
-            return (int) DB::table('order_items')->sum('quantity');
+        // Computed instantaneously from aggregated catalog metrics
+        $totalCatalogUnits = Cache::remember('products_total_units_sold', 86400, function () use ($products) {
+            return array_sum(array_column($products, 'total_units_sold'));
         });
 
-        $totalItemRows = Cache::remember('products_total_item_rows', 3600, function () {
-            return (int) DB::table('order_items')->count();
+        $totalItemRows = Cache::remember('products_total_item_rows', 86400, function () use ($products) {
+            return array_sum(array_column($products, 'order_occurrences'));
         });
 
         return view('admin.products.index', compact('products', 'totalCatalogUnits', 'totalItemRows'));

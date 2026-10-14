@@ -28,7 +28,7 @@ class CustomerController extends Controller
         $customers = $query->orderBy('id', 'desc')->paginate($perPage)->withQueryString();
 
         $countries = Cache::remember('customer_countries_list', 3600, function () {
-            return DB::table('customers')->select('country')->distinct()->orderBy('country')->pluck('country');
+            return DB::table('customers')->select('country')->distinct()->orderBy('country')->pluck('country')->all();
         });
 
         $totalCustomers = Cache::remember('total_customers_count', 600, function () {

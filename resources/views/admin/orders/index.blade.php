@@ -9,23 +9,23 @@
     <div class="tab-group">
         <a href="{{ route('admin.orders', array_merge(request()->query(), ['status' => 'all', 'page' => 1])) }}" 
            class="tab-btn {{ $status === 'all' || empty($status) ? 'active' : '' }}">
-           All Orders ({{ number_format($statusCounts->all_count ?? 0) }})
+           All Orders ({{ number_format(data_get($statusCounts, 'all_count', 0)) }})
         </a>
         <a href="{{ route('admin.orders', array_merge(request()->query(), ['status' => 'completed', 'page' => 1])) }}" 
            class="tab-btn {{ $status === 'completed' ? 'active' : '' }}">
-           Completed ({{ number_format($statusCounts->completed_count ?? 0) }})
+           Completed ({{ number_format(data_get($statusCounts, 'completed_count', 0)) }})
         </a>
         <a href="{{ route('admin.orders', array_merge(request()->query(), ['status' => 'pending', 'page' => 1])) }}" 
            class="tab-btn {{ $status === 'pending' ? 'active' : '' }}">
-           Pending ({{ number_format($statusCounts->pending_count ?? 0) }})
+           Pending ({{ number_format(data_get($statusCounts, 'pending_count', 0)) }})
         </a>
         <a href="{{ route('admin.orders', array_merge(request()->query(), ['status' => 'refunded', 'page' => 1])) }}" 
            class="tab-btn {{ $status === 'refunded' ? 'active' : '' }}">
-           Refunded ({{ number_format($statusCounts->refunded_count ?? 0) }})
+           Refunded ({{ number_format(data_get($statusCounts, 'refunded_count', 0)) }})
         </a>
         <a href="{{ route('admin.orders', array_merge(request()->query(), ['status' => 'cancelled', 'page' => 1])) }}" 
            class="tab-btn {{ $status === 'cancelled' ? 'active' : '' }}">
-           Cancelled ({{ number_format($statusCounts->cancelled_count ?? 0) }})
+           Cancelled ({{ number_format(data_get($statusCounts, 'cancelled_count', 0)) }})
         </a>
     </div>
 
@@ -123,48 +123,83 @@
 
     <!-- Server-Side Pagination Bar (Strict 10 items per page) -->
     <div class="pagination-container">
+        @php
+            $first = $orders->firstItem() ?? 0;
+            $last = $orders->lastItem() ?? 0;
+            $total = $orders->total();
+            $remaining = max(0, $total - $last);
+            $cp = $orders->currentPage();
+            $lp = $orders->lastPage();
+            $startRange = max(1, $cp - 2);
+            $endRange = min($lp, $cp + 2);
+        @endphp
+
         <div class="pagination-info">
-            Showing <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($orders->firstItem() ?? 0) }}</span> to 
-            <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($orders->lastItem() ?? 0) }}</span> of 
-            <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($orders->total()) }}</span> orders
+            Showing <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($first) }}</span> to 
+            <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($last) }}</span> of 
+            <span style="font-weight: 600; color: var(--color-ink);">{{ number_format($total) }}</span> orders 
+            <span style="color: var(--color-hairline); margin: 0 6px;">|</span>
+            <span style="color: var(--color-ink-muted); font-weight: 500;">{{ number_format($remaining) }} remaining</span>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="pagination-links">
-                {{-- First Page --}}
-                @if($orders->currentPage() > 2)
-                    <a href="{{ $orders->url(1) }}" class="page-btn" title="First Page">&laquo; 1</a>
-                @endif
-
-                {{-- Previous Page Link --}}
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div class="pagination-links" style="display: flex; align-items: center; gap: 4px;">
+                {{-- Previous Arrow Link --}}
                 @if ($orders->onFirstPage())
-                    <span class="page-btn disabled">&larr; Previous</span>
+                    <span class="page-btn disabled" aria-disabled="true" title="First page reached">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 2px;"><polyline points="15 18 9 12 15 6"></polyline></svg> Previous
+                    </span>
                 @else
-                    <a href="{{ $orders->previousPageUrl() }}" class="page-btn">&larr; Previous</a>
+                    <a href="{{ $orders->previousPageUrl() }}" class="page-btn" rel="prev" title="Go to previous 10 orders">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 2px;"><polyline points="15 18 9 12 15 6"></polyline></svg> Previous
+                    </a>
                 @endif
 
-                {{-- Current Page Indicator --}}
-                <span class="page-btn active" style="cursor: default;">Page {{ number_format($orders->currentPage()) }} of {{ number_format($orders->lastPage()) }}</span>
+                {{-- Page 1 Pill (if window shifted) --}}
+                @if($startRange > 1)
+                    <a href="{{ $orders->url(1) }}" class="page-btn">1</a>
+                    @if($startRange > 2)
+                        <span class="page-btn" style="border: none; background: transparent; cursor: default; padding: 6px 4px; color: var(--color-ink-muted);">&hellip;</span>
+                    @endif
+                @endif
 
-                {{-- Next Page Link --}}
+                {{-- Active Window Page Pills --}}
+                @for($pageNumber = $startRange; $pageNumber <= $endRange; $pageNumber++)
+                    @if($pageNumber == $cp)
+                        <span class="page-btn active" style="cursor: default;">{{ number_format($pageNumber) }}</span>
+                    @else
+                        <a href="{{ $orders->url($pageNumber) }}" class="page-btn">{{ number_format($pageNumber) }}</a>
+                    @endif
+                @endfor
+
+                {{-- Last Page Pill (if window shifted) --}}
+                @if($endRange < $lp)
+                    @if($endRange < $lp - 1)
+                        <span class="page-btn" style="border: none; background: transparent; cursor: default; padding: 6px 4px; color: var(--color-ink-muted);">&hellip;</span>
+                    @endif
+                    <a href="{{ $orders->url($lp) }}" class="page-btn" title="Last Page">{{ number_format($lp) }}</a>
+                @endif
+
+                {{-- Next Arrow Link --}}
                 @if ($orders->hasMorePages())
-                    <a href="{{ $orders->nextPageUrl() }}" class="page-btn">Next &rarr;</a>
+                    <a href="{{ $orders->nextPageUrl() }}" class="page-btn" rel="next" title="Go to next 10 orders">
+                        Next <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-left: 2px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
                 @else
-                    <span class="page-btn disabled">Next &rarr;</span>
-                @endif
-
-                {{-- Last Page --}}
-                @if($orders->currentPage() < $orders->lastPage() - 1)
-                    <a href="{{ $orders->url($orders->lastPage()) }}" class="page-btn" title="Last Page">{{ number_format($orders->lastPage()) }} &raquo;</a>
+                    <span class="page-btn disabled" aria-disabled="true" title="Last page reached">
+                        Next <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-left: 2px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </span>
                 @endif
             </div>
 
             {{-- Instant Jump Form --}}
             <form method="GET" action="{{ route('admin.orders') }}" style="display: flex; align-items: center; gap: 4px; margin-left: 8px;">
                 @foreach(request()->except('page') as $key => $val)
-                    <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                    @if(is_string($val))
+                        <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                    @endif
                 @endforeach
-                <input type="number" name="page" min="1" max="{{ $orders->lastPage() }}" placeholder="Jump" class="filter-input" style="width: 70px; padding: 5px 8px; font-size: 12px;">
+                <input type="number" name="page" min="1" max="{{ $orders->lastPage() }}" placeholder="Page" class="filter-input" style="width: 72px; padding: 5px 8px; font-size: 12px; text-align: center;">
                 <button type="submit" class="page-btn" style="padding: 5px 10px; font-size: 12px; cursor: pointer;">Go</button>
             </form>
         </div>
