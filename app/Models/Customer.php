@@ -46,16 +46,30 @@ class Customer extends Model
 
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
-        if (!empty($term)) {
-            return $query->where(function ($q) use ($term) {
-                if (is_numeric($term)) {
-                    $q->where('id', (int) $term);
-                } else {
-                    $q->where('full_name', 'LIKE', $term . '%')
-                      ->orWhere('email', 'LIKE', $term . '%');
-                }
-            });
+        if (empty($term)) {
+            return $query;
         }
-        return $query;
+
+        $term = trim($term);
+
+        if (is_numeric($term)) {
+            return $query->where('id', (int) $term);
+        }
+
+        // Extract alphanumeric tokens for Boolean Mode fulltext search
+        $cleaned = preg_replace('/[+\-><()~*\"@.]+/', ' ', $term);
+        $words = array_filter(explode(' ', $cleaned), fn ($w) => mb_strlen($w) >= 3);
+
+        if (!empty($words)) {
+            // Build Boolean Mode inverted index expression: +word1* +word2*
+            $booleanQuery = implode(' ', array_map(fn ($w) => '+' . $w . '*', $words));
+            return $query->whereRaw("MATCH(full_name, email) AGAINST(? IN BOOLEAN MODE)", [$booleanQuery]);
+        }
+
+        // High-speed fallback for short prefixes (< 3 chars): Use B+Tree prefix indexes
+        return $query->where(function ($q) use ($term) {
+            $q->where('full_name', 'LIKE', $term . '%')
+              ->orWhere('email', 'LIKE', $term . '%');
+        });
     }
 }

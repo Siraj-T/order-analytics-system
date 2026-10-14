@@ -69,24 +69,36 @@ class Order extends Model
 
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
-        if (!empty($term)) {
-            if (is_numeric($term)) {
-                return $query->where('id', (int) $term);
-            }
-
-            // High-volume optimization: Query the 25k customer index directly (<1ms) instead of a slow correlated subquery on 1M rows
-            $customerIds = Customer::where('full_name', 'LIKE', $term . '%')
-                ->limit(1000)
-                ->pluck('id');
-
-            if ($customerIds->isNotEmpty()) {
-                return $query->whereIn('customer_id', $customerIds);
-            }
-
-            // Return empty result set if no customers match prefix
-            return $query->whereRaw('1 = 0');
+        if (empty($term)) {
+            return $query;
         }
-        return $query;
+
+        $term = trim($term);
+
+        if (is_numeric($term)) {
+            return $query->where(function ($q) use ($term) {
+                $q->where('id', (int) $term)
+                  ->orWhere('customer_id', (int) $term);
+            });
+        }
+
+        // High-performance search: Query the Customer FULLTEXT Inverted Index (<1ms)
+        $customerIds = Customer::query()
+            ->search($term)
+            ->limit(1000)
+            ->pluck('id');
+
+        if ($customerIds->isNotEmpty()) {
+            return $query->whereIn('customer_id', $customerIds);
+        }
+
+        // Direct 2-letter shipping country match (e.g. "US", "DE", "FR")
+        if (strlen($term) === 2 && ctype_alpha($term)) {
+            return $query->where('shipping_country', strtoupper($term));
+        }
+
+        // Return empty result set if no customers or countries match
+        return $query->whereRaw('1 = 0');
     }
 
     /**
