@@ -144,31 +144,31 @@
 
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <div class="pagination-links" style="display: flex; align-items: center; gap: 4px;">
-                {{-- Previous Arrow Link --}}
+                {{-- Previous Arrow Link (Keyset Cursor Seek) --}}
                 @if ($orders->onFirstPage())
                     <span class="page-btn disabled" aria-disabled="true" title="First page reached">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 2px;"><polyline points="15 18 9 12 15 6"></polyline></svg> Previous
                     </span>
                 @else
-                    <a href="{{ $orders->previousPageUrl() }}" class="page-btn" rel="prev" title="Go to previous 10 orders">
+                    <a href="{{ route('admin.orders', array_merge(request()->query(), ['page' => max(1, $cp - 1), 'cursor_before' => optional($orders->first())->id, 'cursor_after' => null])) }}" class="page-btn" rel="prev" title="Go to previous 10 orders via Keyset Seek">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 2px;"><polyline points="15 18 9 12 15 6"></polyline></svg> Previous
                     </a>
                 @endif
 
                 {{-- Page 1 Pill (if window shifted) --}}
                 @if($startRange > 1)
-                    <a href="{{ $orders->url(1) }}" class="page-btn">1</a>
+                    <a href="{{ route('admin.orders', array_merge(request()->except(['cursor_after', 'cursor_before']), ['page' => 1])) }}" class="page-btn">1</a>
                     @if($startRange > 2)
                         <span class="page-btn" style="border: none; background: transparent; cursor: default; padding: 6px 4px; color: var(--color-ink-muted);">&hellip;</span>
                     @endif
                 @endif
 
-                {{-- Active Window Page Pills --}}
+                {{-- Active Window Page Pills (Deferred Join) --}}
                 @for($pageNumber = $startRange; $pageNumber <= $endRange; $pageNumber++)
                     @if($pageNumber == $cp)
                         <span class="page-btn active" style="cursor: default;">{{ number_format($pageNumber) }}</span>
                     @else
-                        <a href="{{ $orders->url($pageNumber) }}" class="page-btn">{{ number_format($pageNumber) }}</a>
+                        <a href="{{ route('admin.orders', array_merge(request()->except(['cursor_after', 'cursor_before']), ['page' => $pageNumber])) }}" class="page-btn">{{ number_format($pageNumber) }}</a>
                     @endif
                 @endfor
 
@@ -177,12 +177,12 @@
                     @if($endRange < $lp - 1)
                         <span class="page-btn" style="border: none; background: transparent; cursor: default; padding: 6px 4px; color: var(--color-ink-muted);">&hellip;</span>
                     @endif
-                    <a href="{{ $orders->url($lp) }}" class="page-btn" title="Last Page">{{ number_format($lp) }}</a>
+                    <a href="{{ route('admin.orders', array_merge(request()->except(['cursor_after', 'cursor_before']), ['page' => $lp])) }}" class="page-btn" title="Last Page">{{ number_format($lp) }}</a>
                 @endif
 
-                {{-- Next Arrow Link --}}
+                {{-- Next Arrow Link (Keyset Cursor Seek) --}}
                 @if ($orders->hasMorePages())
-                    <a href="{{ $orders->nextPageUrl() }}" class="page-btn" rel="next" title="Go to next 10 orders">
+                    <a href="{{ route('admin.orders', array_merge(request()->query(), ['page' => min($lp, $cp + 1), 'cursor_after' => optional($orders->last())->id, 'cursor_before' => null])) }}" class="page-btn" rel="next" title="Go to next 10 orders via Keyset Seek">
                         Next <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-left: 2px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </a>
                 @else
