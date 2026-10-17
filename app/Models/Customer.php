@@ -31,6 +31,11 @@ class Customer extends Model
         return $this->hasMany(Order::class, 'customer_id');
     }
 
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class, 'customer_id');
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);

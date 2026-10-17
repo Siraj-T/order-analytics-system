@@ -18,15 +18,34 @@ class Order extends Model
         'customer_id',
         'order_date',
         'status',
+        'subtotal_amount',
+        'tax_amount',
+        'shipping_amount',
+        'discount_amount',
         'total_amount',
+        'currency_code',
         'shipping_country',
+        'shipping_carrier',
+        'tracking_number',
+        'paid_at',
+        'shipped_at',
+        'delivered_at',
+        'cancelled_at',
     ];
 
     protected function casts(): array
     {
         return [
             'order_date' => 'datetime',
+            'subtotal_amount' => 'decimal:2',
+            'tax_amount' => 'decimal:2',
+            'shipping_amount' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',
+            'paid_at' => 'datetime',
+            'shipped_at' => 'datetime',
+            'delivered_at' => 'datetime',
+            'cancelled_at' => 'datetime',
         ];
     }
 
@@ -38,6 +57,16 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class, 'order_id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'order_id');
+    }
+
+    public function statusHistory(): HasMany
+    {
+        return $this->hasMany(OrderStatusHistory::class, 'order_id');
     }
 
     public function scopeStatus(Builder $query, ?string $status): Builder
