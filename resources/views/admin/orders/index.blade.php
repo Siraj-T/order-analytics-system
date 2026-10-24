@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('title', 'Orders Explorer | Order Analytics')
-@section('page-title', 'Orders Explorer (1,000,000 Records)')
+@section('page-title', 'Orders Explorer')
 
 @section('content')
 <!-- Status Tabs Group (Apple Segmented Control) -->

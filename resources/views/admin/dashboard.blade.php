@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('title', 'Executive Dashboard | Order Analytics')
-@section('page-title', 'Executive Analytics Dashboard (1,000,000+ Records)')
+@section('page-title', 'Executive Analytics Dashboard')
 
 @section('content')
 <div data-live-sync data-version="{{ $version }}" data-live-url="{{ route('admin.dashboard.live') }}">
@@ -11,7 +11,7 @@
             <span class="metric-label">Total Gross Revenue</span>
             <div id="metric-total_revenue" class="metric-value">${{ number_format($totalRevenue, 2) }}</div>
             <div class="metric-badge" style="color: #248a3d;">
-                <span>Across {{ number_format($totalOrders) }} Orders (1M+ Live Dataset)</span>
+                <span>Across {{ number_format($totalOrders) }} Orders</span>
             </div>
         </div>
 
