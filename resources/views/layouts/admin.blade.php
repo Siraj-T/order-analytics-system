@@ -20,7 +20,6 @@
                 </div>
                 <div>
                     <h1 class="brand-title">Order Analytics</h1>
-                    <span class="brand-subtitle">4,025,000 Records System</span>
                 </div>
             </div>
 
@@ -69,10 +68,6 @@
                     </a>
                 </li>
             </ul>
-
-            <div style="padding: 16px 8px; border-top: 1px solid var(--color-hairline); font-size: 11px; color: var(--color-ink-muted);">
-                <span>High-Performance Keyset Engine</span>
-            </div>
         </aside>
 
         <!-- Main Workspace -->
