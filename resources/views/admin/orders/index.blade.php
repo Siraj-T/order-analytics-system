@@ -28,10 +28,6 @@
            Cancelled ({{ number_format(data_get($statusCounts, 'cancelled_count', 0)) }})
         </a>
     </div>
-
-    <span style="font-size: 13px; color: var(--color-ink-muted);">
-        Server-Side 10 items per page (Sub-10ms response)
-    </span>
 </div>
 
 <!-- Multi-Filter Bar -->

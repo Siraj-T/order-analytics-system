@@ -27,9 +27,6 @@
     <div class="metric-card">
         <span class="metric-label">Total Item Transactions</span>
         <div class="metric-value">{{ number_format($totalItemRows) }}</div>
-        <div class="metric-badge" style="color: var(--color-ink-muted);">
-            <span>Indexed Covering Scan</span>
-        </div>
     </div>
 </div>
 
@@ -38,9 +35,7 @@
     <div style="padding: 20px 24px; border-bottom: 1px solid var(--color-hairline); display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h3 style="font-size: 16px; font-weight: 600;">Top 25 Products by Revenue</h3>
-            <p style="font-size: 13px; color: var(--color-ink-muted);">Aggregated and cached using composite index <code>idx_items_product_metrics</code></p>
         </div>
-        <span style="font-size: 12px; color: var(--color-ink-muted);">Updated Daily</span>
     </div>
 
     <table class="data-table">
