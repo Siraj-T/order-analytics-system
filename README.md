@@ -30,7 +30,7 @@ Designed strictly as a read-only interaction system, it demonstrates sub-10ms qu
    - Search across 25,000 customer accounts with real-time Lifetime Value (LTV) calculation.
    - Interactive profile modal detailing customer lifetime order history.
 
-4. **Product Insights Leaderboard:**
+4. **Product Metrics Leaderboard:**
    - Top 25 products by gross revenue and sales volume aggregated across 3,000,000 items.
    - Satisfied via composite covering index `idx_items_product_metrics`.
 

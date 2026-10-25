@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Product Performance Insights | Order Analytics')
-@section('page-title', 'Product Insights (3,000,000 Line Items)')
+@section('title', 'Product Metrics | Order Analytics')
+@section('page-title', 'Product Metrics (3,000,000 Line Items)')
 
 @section('content')
 <!-- KPI Metric Cards Grid -->

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
 class ProductController extends Controller
 {
     /**
-     * Display Product Insights Leaderboard from 3M line items.
+     * Display Product Metrics Leaderboard from 3M line items.
      * Engineered for instantaneous sub-1ms response via Materialized Summary Table.
      */
     public function index()

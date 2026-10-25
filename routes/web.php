@@ -23,6 +23,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers');
     Route::get('/customers/{id}', [CustomerController::class, 'show'])->name('customers.show');
 
-    // Product Insights Leaderboard
+    // Product Metrics Leaderboard
     Route::get('/products', [ProductController::class, 'index'])->name('products');
 });

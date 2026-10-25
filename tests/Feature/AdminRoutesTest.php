@@ -143,7 +143,7 @@ class AdminRoutesTest extends TestCase
 
         $response = $this->get(route('admin.products'));
         $response->assertStatus(200);
-        $response->assertSee('Product Insights');
+        $response->assertSee('Product Metrics');
         $response->assertSee('Noise-Cancelling Headphones');
     }
 }
