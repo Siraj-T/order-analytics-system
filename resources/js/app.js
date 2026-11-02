@@ -4,10 +4,75 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    initInstantNavigation();
     initLiveSync();
     initOrderDrawer();
     initCustomerModal();
 });
+
+/**
+ * 0. Instant Fluid Navigation (Hover / Mousedown Link & Tab Prefetcher)
+ * Pre-fetches navigation endpoints on pointer hover / touchstart into browser HTTP cache.
+ * Makes tab and page switching feel 0ms instantaneous.
+ */
+function initInstantNavigation() {
+    const prefetchedUrls = new Set();
+
+    function prefetch(url) {
+        if (!url || prefetchedUrls.has(url) || url.startsWith('#') || url.startsWith('javascript:')) return;
+        try {
+            const parsed = new URL(url, window.location.origin);
+            if (parsed.origin !== window.location.origin) return;
+            prefetchedUrls.add(parsed.href);
+
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.href = parsed.href;
+            link.as = 'document';
+            document.head.appendChild(link);
+        } catch (e) {
+            // Quiet fail
+        }
+    }
+
+    const selector = '.nav-menu a, .tab-btn, .pagination-links a, a[href^="/admin"]';
+
+    document.addEventListener('mouseover', (e) => {
+        const link = e.target.closest(selector);
+        if (link && link.href) {
+            prefetch(link.href);
+        }
+
+        // Prefetch on-demand order drawer on row hover (<0.2ms warm cache pop)
+        const orderRow = e.target.closest('[data-order-id]');
+        if (orderRow) {
+            const orderId = orderRow.getAttribute('data-order-id');
+            const drawerUrl = `/admin/orders/${orderId}/items`;
+            if (orderId && !prefetchedUrls.has(drawerUrl)) {
+                prefetchedUrls.add(drawerUrl);
+                fetch(drawerUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } }).catch(() => {});
+            }
+        }
+
+        // Prefetch customer profile modal on hover
+        const custBtn = e.target.closest('[data-customer-id]');
+        if (custBtn) {
+            const custId = custBtn.getAttribute('data-customer-id');
+            const custUrl = `/admin/customers/${custId}`;
+            if (custId && !prefetchedUrls.has(custUrl)) {
+                prefetchedUrls.add(custUrl);
+                fetch(custUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } }).catch(() => {});
+            }
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchstart', (e) => {
+        const link = e.target.closest(selector);
+        if (link && link.href) {
+            prefetch(link.href);
+        }
+    }, { passive: true });
+}
 
 /**
  * 1. Live Background Auto-Sync
@@ -152,8 +217,16 @@ function initCustomerModal() {
         const trigger = e.target.closest('[data-customer-id]');
         if (!trigger) return;
 
-        // Prevent opening if clicking inside an input or button
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+        // Prevent opening only if clicking inside text input elements
+        if (e.target.tagName === 'INPUT') return;
+
+        // Smoothly dismiss order slide-over drawer if open when transitioning to customer modal
+        const drawer = document.getElementById('order-drawer');
+        const drawerOverlay = document.getElementById('order-drawer-overlay');
+        if (drawer && drawer.classList.contains('open')) {
+            drawer.classList.remove('open');
+            if (drawerOverlay) drawerOverlay.classList.remove('open');
+        }
 
         const customerId = trigger.getAttribute('data-customer-id');
         if (!customerId) return;

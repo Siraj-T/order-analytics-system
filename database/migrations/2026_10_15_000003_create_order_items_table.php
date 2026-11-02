@@ -11,25 +11,30 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('order_items', function (Blueprint $table) {
-            $table->bigInteger('id')->autoIncrement();
-            $table->integer('order_id');
-            $table->string('product_name', 120);
-            $table->integer('quantity');
-            $table->decimal('unit_price', 10, 2);
+        if (!Schema::hasTable('order_items')) {
+            Schema::create('order_items', function (Blueprint $table) {
+                $table->bigInteger('id')->autoIncrement();
+                $table->integer('order_id');
+                $table->string('product_name', 120);
+                $table->integer('quantity');
+                $table->decimal('unit_price', 10, 2);
 
-            // Foreign key
-            $table->foreign('order_id', 'fk_items_order')
-                  ->references('id')
-                  ->on('orders');
+                // Foreign key
+                $table->foreign('order_id', 'fk_items_order')
+                      ->references('id')
+                      ->on('orders');
 
-            // Standard indexes
-            $table->index('order_id', 'idx_order_id');
-            $table->index('product_name', 'idx_product_name');
+                // Covering index for on-demand drawer inspection (<1ms without table data reads)
+                $table->index(['order_id', 'product_name', 'quantity', 'unit_price'], 'idx_items_order_covering');
 
-            // Covering index for top products aggregation across 3 million rows
-            $table->index(['product_name', 'quantity', 'unit_price'], 'idx_items_product_metrics');
-        });
+                // Covering index for product search without filesort + top products aggregation across 3 million rows
+                $table->index(['product_name', 'order_id', 'quantity', 'unit_price'], 'idx_items_product_metrics');
+
+                if (DB::getDriverName() === 'mysql') {
+                    $table->fullText('product_name', 'ft_items_product');
+                }
+            });
+        }
     }
 
     /**

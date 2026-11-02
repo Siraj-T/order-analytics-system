@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('title', 'Customers Directory | Order Analytics')
-@section('page-title', 'Customers Directory (25,000 Customers)')
+@section('page-title', 'Customers Directory (' . number_format($totalCustomers) . ' Customers)')
 
 @section('content')
 <!-- Filter Bar -->

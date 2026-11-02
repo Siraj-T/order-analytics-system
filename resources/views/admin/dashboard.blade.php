@@ -4,6 +4,12 @@
 @section('page-title', 'Executive Analytics Dashboard')
 
 @section('content')
+@if($dbOffline ?? false)
+    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 20px; color: #dc2626; font-size: 14px; display: flex; align-items: center; gap: 10px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span><strong>Database Connection Notice:</strong> Unable to connect to MySQL database. Please verify credentials in <code>.env</code> or run <code>php artisan app:import-dump</code>.</span>
+    </div>
+@endif
 <div data-live-sync data-version="{{ $version }}" data-live-url="{{ route('admin.dashboard.live') }}">
     <!-- KPI Metric Cards Grid -->
     <div class="metrics-grid">

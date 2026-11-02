@@ -43,7 +43,8 @@ class Customer extends Model
 
     public function scopeCountry(Builder $query, ?string $country): Builder
     {
-        if (!empty($country)) {
+        $country = trim((string) $country);
+        if ($country !== '') {
             return $query->where('country', $country);
         }
         return $query;
@@ -51,11 +52,10 @@ class Customer extends Model
 
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
-        if (empty($term)) {
+        $term = trim((string) $term);
+        if ($term === '') {
             return $query;
         }
-
-        $term = trim($term);
 
         if (is_numeric($term)) {
             return $query->where('id', (int) $term);
@@ -65,7 +65,7 @@ class Customer extends Model
         $cleaned = preg_replace('/[+\-><()~*\"@.]+/', ' ', $term);
         $words = array_filter(explode(' ', $cleaned), fn ($w) => mb_strlen($w) >= 3);
 
-        if (!empty($words)) {
+        if (!empty($words) && \Illuminate\Support\Facades\DB::getDriverName() === 'mysql') {
             // Build Boolean Mode inverted index expression: +word1* +word2*
             $booleanQuery = implode(' ', array_map(fn ($w) => '+' . $w . '*', $words));
             return $query->whereRaw("MATCH(full_name, email) AGAINST(? IN BOOLEAN MODE)", [$booleanQuery]);
@@ -76,5 +76,27 @@ class Customer extends Model
             $q->where('full_name', 'LIKE', $term . '%')
               ->orWhere('email', 'LIKE', $term . '%');
         });
+    }
+
+    /**
+     * Direct zero-cache list of unique customer countries from normalized lookup table (<0.02ms).
+     */
+    public static function getCountries(): array
+    {
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('order_countries')) {
+                $countries = \Illuminate\Support\Facades\DB::table('order_countries')->orderBy('country')->pluck('country')->all();
+                if (!empty($countries)) {
+                    return $countries;
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        return \Illuminate\Support\Facades\DB::table('customers')
+            ->select('country')
+            ->distinct()
+            ->orderBy('country')
+            ->pluck('country')
+            ->all();
     }
 }

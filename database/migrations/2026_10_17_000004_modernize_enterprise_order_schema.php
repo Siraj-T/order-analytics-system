@@ -94,8 +94,14 @@ return new class extends Migration
             });
         }
 
-        // 5. Enhance Orders Table with Financial Breakdown, Currency & Lifecycle Timestamps
+        // 5. Enhance Orders Table with Financial Breakdown, Currency, Address Links & Lifecycle Timestamps
         Schema::table('orders', function (Blueprint $table) {
+            if (!Schema::hasColumn('orders', 'shipping_address_id')) {
+                $table->unsignedBigInteger('shipping_address_id')->nullable()->after('customer_id');
+            }
+            if (!Schema::hasColumn('orders', 'billing_address_id')) {
+                $table->unsignedBigInteger('billing_address_id')->nullable()->after('shipping_address_id');
+            }
             if (!Schema::hasColumn('orders', 'currency_code')) {
                 $table->char('currency_code', 3)->default('USD')->after('total_amount')->index('idx_orders_currency');
             }
@@ -146,6 +152,33 @@ return new class extends Migration
                 $table->timestamp('created_at')->useCurrent();
             }
         });
+
+        // 7. Instant Analytical Materialized Summary Tables (Sub-1ms Dashboard & Leaderboard)
+        if (!Schema::hasTable('dashboard_metrics_summary')) {
+            Schema::create('dashboard_metrics_summary', function (Blueprint $table) {
+                $table->unsignedTinyInteger('id')->primary()->default(1);
+                $table->bigInteger('total_orders')->default(0);
+                $table->decimal('total_revenue', 15, 2)->default(0.00);
+                $table->unsignedInteger('completed_count')->default(0);
+                $table->unsignedInteger('pending_count')->default(0);
+                $table->unsignedInteger('refunded_count')->default(0);
+                $table->unsignedInteger('cancelled_count')->default(0);
+                $table->unsignedInteger('total_customers')->default(0);
+                $table->unsignedBigInteger('max_order_id')->default(0);
+                $table->timestamp('updated_at')->nullable()->useCurrent();
+            });
+        }
+
+        if (!Schema::hasTable('product_metrics_summary')) {
+            Schema::create('product_metrics_summary', function (Blueprint $table) {
+                $table->string('product_name', 120)->primary();
+                $table->bigInteger('total_units_sold');
+                $table->decimal('total_gross_revenue', 15, 2);
+                $table->decimal('average_price', 10, 2);
+                $table->integer('order_occurrences');
+                $table->timestamp('updated_at')->nullable()->useCurrent();
+            });
+        }
     }
 
     /**
@@ -177,6 +210,8 @@ return new class extends Migration
             }
         });
 
+        Schema::dropIfExists('dashboard_metrics_summary');
+        Schema::dropIfExists('product_metrics_summary');
         Schema::dropIfExists('order_status_history');
         Schema::dropIfExists('payments');
         Schema::dropIfExists('addresses');

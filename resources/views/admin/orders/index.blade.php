@@ -7,23 +7,23 @@
 <!-- Status Tabs Group (Apple Segmented Control) -->
 <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
     <div class="tab-group">
-        <a href="{{ route('admin.orders', array_merge(request()->query(), ['status' => 'all', 'page' => 1])) }}" 
+        <a href="{{ route('admin.orders', array_merge(request()->except(['page', 'cursor_after', 'cursor_before']), ['status' => 'all', 'page' => 1])) }}" 
            class="tab-btn {{ $status === 'all' || empty($status) ? 'active' : '' }}">
            All Orders ({{ number_format(data_get($statusCounts, 'all_count', 0)) }})
         </a>
-        <a href="{{ route('admin.orders', array_merge(request()->query(), ['status' => 'completed', 'page' => 1])) }}" 
+        <a href="{{ route('admin.orders', array_merge(request()->except(['page', 'cursor_after', 'cursor_before']), ['status' => 'completed', 'page' => 1])) }}" 
            class="tab-btn {{ $status === 'completed' ? 'active' : '' }}">
            Completed ({{ number_format(data_get($statusCounts, 'completed_count', 0)) }})
         </a>
-        <a href="{{ route('admin.orders', array_merge(request()->query(), ['status' => 'pending', 'page' => 1])) }}" 
+        <a href="{{ route('admin.orders', array_merge(request()->except(['page', 'cursor_after', 'cursor_before']), ['status' => 'pending', 'page' => 1])) }}" 
            class="tab-btn {{ $status === 'pending' ? 'active' : '' }}">
            Pending ({{ number_format(data_get($statusCounts, 'pending_count', 0)) }})
         </a>
-        <a href="{{ route('admin.orders', array_merge(request()->query(), ['status' => 'refunded', 'page' => 1])) }}" 
+        <a href="{{ route('admin.orders', array_merge(request()->except(['page', 'cursor_after', 'cursor_before']), ['status' => 'refunded', 'page' => 1])) }}" 
            class="tab-btn {{ $status === 'refunded' ? 'active' : '' }}">
            Refunded ({{ number_format(data_get($statusCounts, 'refunded_count', 0)) }})
         </a>
-        <a href="{{ route('admin.orders', array_merge(request()->query(), ['status' => 'cancelled', 'page' => 1])) }}" 
+        <a href="{{ route('admin.orders', array_merge(request()->except(['page', 'cursor_after', 'cursor_before']), ['status' => 'cancelled', 'page' => 1])) }}" 
            class="tab-btn {{ $status === 'cancelled' ? 'active' : '' }}">
            Cancelled ({{ number_format(data_get($statusCounts, 'cancelled_count', 0)) }})
         </a>
@@ -146,7 +146,7 @@
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 2px;"><polyline points="15 18 9 12 15 6"></polyline></svg> Previous
                     </span>
                 @else
-                    <a href="{{ route('admin.orders', array_merge(request()->query(), ['page' => max(1, $cp - 1), 'cursor_before' => optional($orders->first())->id, 'cursor_after' => null])) }}" class="page-btn" rel="prev" title="Go to previous 10 orders via Keyset Seek">
+                    <a href="{{ route('admin.orders', array_merge(request()->except(['cursor_before', 'cursor_after']), ['page' => max(1, $cp - 1), 'cursor_before' => optional($orders->first())->id])) }}" class="page-btn" rel="prev" title="Go to previous 10 orders via Keyset Seek">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 2px;"><polyline points="15 18 9 12 15 6"></polyline></svg> Previous
                     </a>
                 @endif
@@ -178,7 +178,7 @@
 
                 {{-- Next Arrow Link (Keyset Cursor Seek) --}}
                 @if ($orders->hasMorePages())
-                    <a href="{{ route('admin.orders', array_merge(request()->query(), ['page' => min($lp, $cp + 1), 'cursor_after' => optional($orders->last())->id, 'cursor_before' => null])) }}" class="page-btn" rel="next" title="Go to next 10 orders via Keyset Seek">
+                    <a href="{{ route('admin.orders', array_merge(request()->except(['cursor_before', 'cursor_after']), ['page' => min($lp, $cp + 1), 'cursor_after' => optional($orders->last())->id])) }}" class="page-btn" rel="next" title="Go to next 10 orders via Keyset Seek">
                         Next <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-left: 2px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </a>
                 @else
@@ -190,7 +190,7 @@
 
             {{-- Instant Jump Form --}}
             <form method="GET" action="{{ route('admin.orders') }}" style="display: flex; align-items: center; gap: 4px; margin-left: 8px;">
-                @foreach(request()->except('page') as $key => $val)
+                @foreach(request()->except(['page', 'cursor_after', 'cursor_before']) as $key => $val)
                     @if(is_string($val))
                         <input type="hidden" name="{{ $key }}" value="{{ $val }}">
                     @endif

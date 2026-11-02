@@ -4,7 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Order Analytics System')</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <script type="speculationrules">
+    {
+      "prefetch": [
+        {
+          "source": "list",
+          "urls": [
+            "{{ route('admin.dashboard') }}",
+            "{{ route('admin.products') }}",
+            "{{ route('admin.orders') }}",
+            "{{ route('admin.customers') }}"
+          ]
+        }
+      ]
+    }
+    </script>
 </head>
 <body>
     <div class="app-container">
@@ -113,6 +130,6 @@
         </div>
     </div>
 
-    <script src="{{ asset('js/app.js') }}"></script>
+    <script src="{{ asset('js/app.js') }}" defer></script>
 </body>
 </html>
